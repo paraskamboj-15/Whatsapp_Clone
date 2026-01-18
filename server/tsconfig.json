@@ -1,0 +1,11 @@
+// server/tsconfig.json
+{
+  "compilerOptions": {
+    "target": "es2016",          // Modern JavaScript output
+    "module": "commonjs",        // Node.js uses CommonJS
+    "outDir": "./dist",          // Where the compiled JS will go
+    "rootDir": "./src",          // Where our TS code lives
+    "strict": true,              // Enforces strict type checking (Best practice!)
+    "esModuleInterop": true      // Allows easy imports
+  }
+}
