@@ -24,7 +24,7 @@ A full-stack real-time messaging application built with the MERN stack and Socke
 
 1.  **Clone the repo:**
     ```bash
-    git clone [https://github.com/YOUR_USERNAME/whatsapp-clone.git](https://github.com/YOUR_USERNAME/whatsapp-clone.git)
+    git clone [https://github.com/paraskamboj-15/Whatsapp_Clone.git](https://github.com/paraskamboj-15/Whatsapp_Clone.git)
     ```
 
 2.  **Install Dependencies:**
