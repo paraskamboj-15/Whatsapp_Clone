@@ -1,5 +1,6 @@
 import express from "express";
 import dotenv from "dotenv";
+import cors from "cors";
 import connectDB from "./config/db";
 import userRoutes from "./routes/userRoutes";
 import chatRoutes from "./routes/chatRoutes";
@@ -11,6 +12,17 @@ dotenv.config();
 connectDB();
 
 const app = express();
+
+/* Enable CORS for Express */
+app.use(cors({
+  origin: [
+    "http://localhost:5173",
+    "https://wwhhaattssaapppp.netlify.app"
+  ],
+  credentials: true,
+}));
+
+// app.options("/*", cors()); 
 
 app.use(express.json());
 
@@ -39,6 +51,7 @@ const io = new Server(server, {
   pingTimeout: 60000, // Close connection if user is inactive for 60s
   cors: {
     origin: ["http://localhost:5173", "https://wwhhaattssaapppp.netlify.app/"], // Your Frontend URL
+    credentials: true,
   },
 });
 
