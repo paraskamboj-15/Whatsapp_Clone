@@ -13,64 +13,75 @@ connectDB();
 
 const app = express();
 
-/* Enable CORS for Express */
+// --------------------------
+// 1. SECURITY (CORS) SETUP
+// --------------------------
+// This allows your Netlify Frontend to talk to this Backend
 app.use(cors({
   origin: [
-    "http://localhost:5173",
-    "https://wwhhaattssaapppp.netlify.app"
+    "http://localhost:5173",                 // Localhost (for development)
+    "https://wwhhaattssaapppp.netlify.app"   // Your Netlify URL (Production)
   ],
   credentials: true,
 }));
 
-// app.options("/*", cors()); 
-
 app.use(express.json());
 
 app.get("/", (req, res) => {
-  res.send("API is running...");
+  res.send("wwhhaattssaapppp API is running Successfully");
 });
 
-// Routes
+// --------------------------
+// 2. API ROUTES
+// --------------------------
 app.use("/api/user", userRoutes);
 app.use("/api/chat", chatRoutes);
 app.use("/api/message", messageRoutes);
 
-// Error Handling
+// Error Handling Middleware
 app.use(notFound);
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 8000;
 
-// 1. Assign the server to a variable
+// --------------------------
+// 3. START SERVER
+// --------------------------
 const server = app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
 
-// 2. Initialize Socket.io
+// --------------------------
+// 4. SOCKET.IO SETUP
+// --------------------------
 const io = new Server(server, {
   pingTimeout: 60000, // Close connection if user is inactive for 60s
   cors: {
-    origin: ["http://localhost:5173", "https://wwhhaattssaapppp.netlify.app/"], // Your Frontend URL
+    // Must match the origins above EXACTLY
+    origin: [
+        "http://localhost:5173", 
+        "https://wwhhaattssaapppp.netlify.app"
+    ],
     credentials: true,
   },
 });
 
-// 3. Define Socket Logic
 io.on("connection", (socket) => {
   console.log("Connected to socket.io");
 
-  // Create a customized "room" for the user when they join
+  // Setup: User joins their own room
   socket.on("setup", (userData) => {
     socket.join(userData._id);
     socket.emit("connected");
   });
 
-  // Joining a Chat Room
+  // Join Chat Room
   socket.on("join chat", (room) => {
     socket.join(room);
     console.log("User Joined Room: " + room);
   });
 
+  // Typing Indicators
   socket.on("typing", (room) => socket.in(room).emit("typing", room));
   socket.on("stop typing", (room) => socket.in(room).emit("stop typing", room));
 
