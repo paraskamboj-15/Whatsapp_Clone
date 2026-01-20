@@ -59,10 +59,11 @@ const io = new Server(server, {
   pingTimeout: 60000, // Close connection if user is inactive for 60s
   cors: {
     // Must match the origins above EXACTLY
-    origin: [
-        "http://localhost:5173", 
-        "https://wwhhaattssaapppp.netlify.app"
-    ],
+    // origin: [
+    //     "http://localhost:5173", 
+    //     "https://wwhhaattssaapppp.netlify.app"
+    // ],
+    origin: true,
     credentials: true,
   },
 });
