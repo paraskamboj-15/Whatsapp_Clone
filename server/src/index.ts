@@ -18,10 +18,11 @@ const app = express();
 // --------------------------
 // This allows your Netlify Frontend to talk to this Backend
 app.use(cors({
-  origin: [
-    "http://localhost:5173",                 // Localhost (for development)
-    "https://wwhhaattssaapppp.netlify.app"   // Your Netlify URL (Production)
-  ],
+  // origin: [
+  //   "http://localhost:5173",                 // Localhost (for development)
+  //   "https://wwhhaattssaapppp.netlify.app"   // Your Netlify URL (Production)
+  // ],
+  origin: true,
   credentials: true,
 }));
 
