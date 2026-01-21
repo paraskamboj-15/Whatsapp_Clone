@@ -89,3 +89,30 @@ export const allUsers = asyncHandler(async (req: any, res: Response) => {
   const users = await User.find(keyword).find({ _id: { $ne: req.user._id } });
   res.send(users);
 });
+
+// @description     Update User Profile
+// @route           PUT /api/user/profile
+// @access          Protected
+export const updateUserProfile = asyncHandler(async (req: any, res: Response) => {
+  const user = await User.findById(req.user._id);
+
+  if (user) {
+    user.name = req.body.name || user.name;
+    user.pic = req.body.pic || user.pic;
+    if (req.body.password) {
+      user.password = req.body.password;
+    }
+    const updatedUser = await user.save();
+    res.json({
+      _id: updatedUser._id,
+      name: updatedUser.name,
+      email: updatedUser.email,
+      pic: updatedUser.pic,
+      isAdmin: updatedUser.isAdmin,
+      token: generateToken(updatedUser._id as unknown as string),
+    });
+  } else {
+    res.status(404);
+    throw new Error("User not found");
+  }
+});

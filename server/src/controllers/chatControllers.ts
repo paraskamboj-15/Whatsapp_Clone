@@ -85,7 +85,6 @@ export const fetchChats = asyncHandler(async (req: any, res: Response) => {
   }
 });
 
-
 // @description     Create New Group Chat
 export const createGroupChat = asyncHandler(async (req: any, res: Response) => {
   if (!req.body.users || !req.body.name) {
@@ -123,8 +122,81 @@ export const createGroupChat = asyncHandler(async (req: any, res: Response) => {
   }
 });
 
-// @description     Rename Group (Optional - add later)
+// @description     Rename Group
+// @route           PUT /api/chat/rename
 export const renameGroup = asyncHandler(async (req: any, res: Response) => {
-    // We can add this logic later if you want full admin controls!
-    res.json({ message: "Rename feature coming soon" });
+  const { chatId, chatName } = req.body;
+
+  const updatedChat = await Chat.findByIdAndUpdate(
+    chatId,
+    { chatName: chatName },
+    { new: true }
+  )
+    .populate("users", "-password")
+    .populate("groupAdmin", "-password");
+
+  if (!updatedChat) {
+    res.status(404);
+    throw new Error("Chat Not Found");
+  } else {
+    res.json(updatedChat);
+  }
+});
+
+// @description     Add user to Group
+// @route           PUT /api/chat/groupadd
+export const addToGroup = asyncHandler(async (req: any, res: Response) => {
+  const { chatId, userId } = req.body;
+
+  const added = await Chat.findByIdAndUpdate(
+    chatId,
+    { $push: { users: userId } },
+    { new: true }
+  )
+    .populate("users", "-password")
+    .populate("groupAdmin", "-password");
+
+  if (!added) {
+    res.status(404);
+    throw new Error("Chat Not Found");
+  } else {
+    res.json(added);
+  }
+});
+
+// @description     Remove user from Group
+// @route           PUT /api/chat/groupremove
+export const removeFromGroup = asyncHandler(async (req: any, res: Response) => {
+  const { chatId, userId } = req.body;
+
+  const removed = await Chat.findByIdAndUpdate(
+    chatId,
+    { $pull: { users: userId } },
+    { new: true }
+  )
+    .populate("users", "-password")
+    .populate("groupAdmin", "-password");
+
+  if (!removed) {
+    res.status(404);
+    throw new Error("Chat Not Found");
+  } else {
+    res.json(removed);
+  }
+});
+
+// @description     Delete Group
+// @route           DELETE /api/chat/group/:id
+export const deleteGroup = asyncHandler(async (req: any, res: Response) => {
+    const { id } = req.params;
+    
+    // Check if requester is admin (optional logic based on your requirement)
+    const chat = await Chat.findById(id);
+    if(chat && chat.groupAdmin?.toString() !== req.user._id.toString()){
+        res.status(401);
+        throw new Error("Only admins can delete the group");
+    }
+
+    await Chat.findByIdAndDelete(id);
+    res.json({ message: "Group Deleted Successfully" });
 });

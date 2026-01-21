@@ -4,6 +4,8 @@ export interface IMessage extends Document {
   sender: mongoose.Schema.Types.ObjectId;
   content: string;
   chat: mongoose.Schema.Types.ObjectId;
+  readBy: mongoose.Schema.Types.ObjectId[]; // Array of user IDs who have read the message
+  isEdited: boolean; // Field to indicate if the message has been edited
 }
 
 const messageSchema = new Schema<IMessage>(
@@ -11,6 +13,8 @@ const messageSchema = new Schema<IMessage>(
     sender: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
     content: { type: String, trim: true },
     chat: { type: mongoose.Schema.Types.ObjectId, ref: "Chat" },
+    readBy: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+    isEdited: { type: Boolean, default: false },
   },
   {
     timestamps: true,

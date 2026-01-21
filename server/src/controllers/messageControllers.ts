@@ -62,3 +62,75 @@ export const sendMessage = asyncHandler(async (req: any, res: Response) => {
     throw new Error((error as Error).message);
   }
 });
+
+// @description     Mark all messages in a chat as read
+// @route           PUT /api/message/read
+// @access          Protected
+export const markMessagesAsRead = asyncHandler(async (req: any, res: Response) => {
+  const { chatId } = req.body;
+
+  if (!chatId) {
+    res.status(400);
+    throw new Error("ChatId is required");
+  }
+
+  // Update all messages in this chat where the user is NOT in the readBy array
+  await Message.updateMany(
+    { chat: chatId, readBy: { $ne: req.user._id } },
+    { $addToSet: { readBy: req.user._id } }
+  );
+
+  res.status(200).json({ message: "Messages marked as read" });
+});
+
+// @description     Edit a message
+// @route           PUT /api/message/:id
+export const editMessage = asyncHandler(async (req: any, res: Response) => {
+  const { content } = req.body;
+  const messageId = req.params.id;
+
+  const message = await Message.findById(messageId);
+
+  if (!message) {
+    res.status(404);
+    throw new Error("Message not found");
+  }
+
+  // Check if the user is the sender
+  if (message.sender.toString() !== req.user._id.toString()) {
+    res.status(401);
+    throw new Error("You can only edit your own messages");
+  }
+
+  message.content = content;
+  message.isEdited = true; // Flag it as edited
+  // @ts-ignore
+  const updatedMessage = await message.save();
+  
+  // Populate for frontend
+  const fullMessage = await Message.findById(updatedMessage._id)
+      .populate("sender", "name pic email")
+      .populate("chat");
+
+  res.json(fullMessage);
+});
+
+// @description     Delete a message
+// @route           DELETE /api/message/:id
+export const deleteMessage = asyncHandler(async (req: any, res: Response) => {
+  const messageId = req.params.id;
+  const message = await Message.findById(messageId);
+
+  if (!message) {
+    res.status(404);
+    throw new Error("Message not found");
+  }
+
+  if (message.sender.toString() !== req.user._id.toString()) {
+    res.status(401);
+    throw new Error("You can only delete your own messages");
+  }
+
+  await message.deleteOne();
+  res.json({ message: "Message removed" });
+});
