@@ -2,15 +2,12 @@ import { Response } from "express";
 import asyncHandler from "express-async-handler";
 import Chat from "../models/chatModel";
 import User from "../models/userModel";
-
-// We need to use 'any' for the Request type temporarily to access req.user easily 
-// or import the custom AuthRequest interface we made above.
-// For simplicity here, I'll assume req has user.
+import { AuthRequest } from "../types/express"; // Import the custom type
 
 // @description     Create or fetch One-on-One Chat
 // @route           POST /api/chat
 // @access          Protected
-export const accessChat = asyncHandler(async (req: any, res: Response) => {
+export const accessChat = asyncHandler(async (req: AuthRequest, res: Response) => {
   const { userId } = req.body;
 
   if (!userId) {
@@ -20,7 +17,7 @@ export const accessChat = asyncHandler(async (req: any, res: Response) => {
   }
 
   // 1. Find the chat
-  var isChat: any = await Chat.find({
+  let isChat: any = await Chat.find({
     isGroupChat: false,
     $and: [
       { users: { $elemMatch: { $eq: req.user._id } } },
@@ -41,7 +38,7 @@ export const accessChat = asyncHandler(async (req: any, res: Response) => {
     res.send(isChat[0]);
   } else {
     // 3. If no chat, create a new one
-    var chatData = {
+    const chatData = {
       chatName: "sender",
       isGroupChat: false,
       users: [req.user._id, userId],
@@ -64,21 +61,23 @@ export const accessChat = asyncHandler(async (req: any, res: Response) => {
 // @description     Fetch all chats for a user
 // @route           GET /api/chat
 // @access          Protected
-export const fetchChats = asyncHandler(async (req: any, res: Response) => {
+export const fetchChats = asyncHandler(async (req: AuthRequest, res: Response) => {
   try {
-    // Find all chats where the current user is a part of the 'users' array
-    Chat.find({ users: { $elemMatch: { $eq: req.user._id } } })
+    // FIX: Explicitly type 'results' as 'any' to prevent the 
+    // "Type 'IUser[]' is not assignable to type 'IChat[]'" error later.
+    let results: any = await Chat.find({ users: { $elemMatch: { $eq: req.user._id } } })
       .populate("users", "-password")
       .populate("groupAdmin", "-password")
       .populate("latestMessage")
-      .sort({ updatedAt: -1 }) // Sort by newest first
-      .then(async (results: any) => {
-        results = await User.populate(results, {
-          path: "latestMessage.sender",
-          select: "name pic email",
-        });
-        res.status(200).send(results);
-      });
+      .sort({ updatedAt: -1 });
+
+    // Now TypeScript allows this assignment because results is 'any'
+    results = await User.populate(results, {
+      path: "latestMessage.sender",
+      select: "name pic email",
+    });
+
+    res.status(200).send(results);
   } catch (error) {
     res.status(400);
     throw new Error((error as Error).message);
@@ -86,21 +85,22 @@ export const fetchChats = asyncHandler(async (req: any, res: Response) => {
 });
 
 // @description     Create New Group Chat
-export const createGroupChat = asyncHandler(async (req: any, res: Response) => {
+// @route           POST /api/chat/group
+// @access          Protected
+export const createGroupChat = asyncHandler(async (req: AuthRequest, res: Response) => {
   if (!req.body.users || !req.body.name) {
     res.status(400).send({ message: "Please Fill all the fields" });
     return;
   }
 
-  // Frontend sends users as a JSON string string, so we parse it
-  var users = JSON.parse(req.body.users);
+  const users = JSON.parse(req.body.users);
 
   if (users.length < 2) {
     res.status(400).send("More than 2 users are required to form a group chat");
     return;
   }
 
-  // Add the currently logged-in user (the admin) to the list
+  // Add the currently logged-in user (the admin)
   users.push(req.user);
 
   try {
@@ -124,7 +124,8 @@ export const createGroupChat = asyncHandler(async (req: any, res: Response) => {
 
 // @description     Rename Group
 // @route           PUT /api/chat/rename
-export const renameGroup = asyncHandler(async (req: any, res: Response) => {
+// @access          Protected
+export const renameGroup = asyncHandler(async (req: AuthRequest, res: Response) => {
   const { chatId, chatName } = req.body;
 
   const updatedChat = await Chat.findByIdAndUpdate(
@@ -145,7 +146,8 @@ export const renameGroup = asyncHandler(async (req: any, res: Response) => {
 
 // @description     Add user to Group
 // @route           PUT /api/chat/groupadd
-export const addToGroup = asyncHandler(async (req: any, res: Response) => {
+// @access          Protected
+export const addToGroup = asyncHandler(async (req: AuthRequest, res: Response) => {
   const { chatId, userId } = req.body;
 
   const added = await Chat.findByIdAndUpdate(
@@ -166,7 +168,8 @@ export const addToGroup = asyncHandler(async (req: any, res: Response) => {
 
 // @description     Remove user from Group
 // @route           PUT /api/chat/groupremove
-export const removeFromGroup = asyncHandler(async (req: any, res: Response) => {
+// @access          Protected
+export const removeFromGroup = asyncHandler(async (req: AuthRequest, res: Response) => {
   const { chatId, userId } = req.body;
 
   const removed = await Chat.findByIdAndUpdate(
@@ -187,14 +190,21 @@ export const removeFromGroup = asyncHandler(async (req: any, res: Response) => {
 
 // @description     Delete Group
 // @route           DELETE /api/chat/group/:id
-export const deleteGroup = asyncHandler(async (req: any, res: Response) => {
+// @access          Protected
+export const deleteGroup = asyncHandler(async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
     
-    // Check if requester is admin (optional logic based on your requirement)
     const chat = await Chat.findById(id);
+
+    // Optional: Only allow Admin to delete
     if(chat && chat.groupAdmin?.toString() !== req.user._id.toString()){
         res.status(401);
         throw new Error("Only admins can delete the group");
+    }
+
+    if (!chat) {
+      res.status(404);
+      throw new Error("Chat not found");
     }
 
     await Chat.findByIdAndDelete(id);
