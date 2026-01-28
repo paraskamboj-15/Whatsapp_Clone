@@ -10,6 +10,7 @@ export interface IUser extends Document {
   password: string;
   pic: string;
   isAdmin: boolean;
+  lastSeen: Date; 
   matchPassword: (enteredPassword: string) => Promise<boolean>; // Method signature
 }
 
@@ -31,6 +32,10 @@ const userSchema = new Schema<IUser>(
       required: true,
       default: false,
     },
+    lastSeen: {
+      type: Date,
+      default: null,
+    }
   },
   {
     timestamps: true, // Automatically adds createdAt and updatedAt fields
