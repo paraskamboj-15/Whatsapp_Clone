@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { ChatState } from '../context/ChatProvider';
 import { useNavigate } from 'react-router-dom';
@@ -12,6 +12,32 @@ const SideDrawer = () => {
   const [loadingChat, setLoadingChat] = useState(false);
   const [showSearch, setShowSearch] = useState(false); // To toggle the search drawer
 
+useEffect(() => {
+  if (showSearch) {
+    fetchAllUsers();
+  }
+}, [showSearch]);
+
+const fetchAllUsers = async () => {
+  try {
+    setLoading(true);
+    const config = {
+      headers: {
+        Authorization: `Bearer ${user.token}`,
+      },
+    };
+
+    // Calling the API without a search query returns all users
+    const { data } = await axios.get("/api/user", config);
+
+    setLoading(false);
+    setSearchResult(data);
+  } catch (error) {
+    alert("Error Failed to Load the Users");
+    setLoading(false);
+  }
+};
+
   const { user, setSelectedChat, chats, setChats, notification, setNotification } = ChatState();
   const navigate = useNavigate();
 
@@ -21,29 +47,29 @@ const SideDrawer = () => {
   };
 
   const handleSearch = async () => {
-    if (!search) {
-      alert("Please enter something in search");
-      return;
-    }
+  if (!search) {
+    fetchAllUsers();
+    return;
+  }
 
-    try {
-      setLoading(true);
+  try {
+    setLoading(true);
 
-      const config = {
-        headers: {
-          Authorization: `Bearer ${user.token}`,
-        },
-      };
+    const config = {
+      headers: {
+        Authorization: `Bearer ${user.token}`,
+      },
+    };
 
-      const { data } = await axios.get(`/api/user?search=${search}`, config);
+    const { data } = await axios.get(`/api/user?search=${search}`, config);
 
-      setLoading(false);
-      setSearchResult(data);
-    } catch (error) {
-      alert("Error Failed to Load the Search Results");
-      setLoading(false);
-    }
-  };
+    setLoading(false);
+    setSearchResult(data);
+  } catch (error) {
+    alert("Error Failed to Load the Search Results");
+    setLoading(false);
+  }
+};
 
   const accessChat = async (userId: string) => {
     try {
