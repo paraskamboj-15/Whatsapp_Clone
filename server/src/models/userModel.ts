@@ -11,6 +11,7 @@ export interface IUser extends Document {
   pic: string;
   isAdmin: boolean;
   lastSeen: Date; 
+  favorites: mongoose.Schema.Types.ObjectId[];
   matchPassword: (enteredPassword: string) => Promise<boolean>; // Method signature
 }
 
@@ -24,21 +25,22 @@ const userSchema = new Schema<IUser>(
     pic: {
       type: String,
       required: true,
-      default:
-        "https://icon-library.com/images/anonymous-avatar-icon/anonymous-avatar-icon-25.jpg",
+      default: 
+      "https://icon-library.com/images/anonymous-avatar-icon/anonymous-avatar-icon-25.jpg",
     },
-    isAdmin: {
-      type: Boolean,
-      required: true,
-      default: false,
+    isAdmin: { 
+      type: Boolean, 
+      required: true, 
+      default: false, 
     },
-    lastSeen: {
-      type: Date,
-      default: null,
-    }
+    lastSeen: { 
+      type: Date, 
+      default: null, 
+    },
+    favorites: [{ type: mongoose.Schema.Types.ObjectId, ref: "Chat" }]
   },
   {
-    timestamps: true, // Automatically adds createdAt and updatedAt fields
+    timestamps: true, // Automatically adds createdAt and updatedAt fields 
   }
 );
 
@@ -49,12 +51,11 @@ userSchema.pre("save", async function () {
   if (!this.isModified("password")) {
     return;
   }
-  
+   
   // Generate a "salt" (random data to make the hash unique)
   const salt = await bcrypt.genSalt(10);
   // Hash the password
   this.password = await bcrypt.hash(this.password, salt);
-  ;
 });
 
 // 4. Instance Method: Compare Passwords

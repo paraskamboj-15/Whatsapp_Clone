@@ -138,3 +138,36 @@ export const updateUserProfile = asyncHandler(async (req: AuthRequest, res: Resp
     throw new Error("User not found");
   }
 });
+
+// @description     Toggle Favorite Chat
+// @route           PUT /api/user/favorites
+// @access          Protected
+export const toggleFavoriteChat = asyncHandler(async (req: AuthRequest, res: Response) => {
+  const { chatId } = req.body;
+  
+  if (!req.user) {
+    res.status(401);
+    throw new Error("Not authorized");
+  }
+
+  const user = await User.findById(req.user._id);
+
+  if (user) {
+    // Check if chat is already in favorites
+    const isFavorited = user.favorites.includes(chatId as any);
+
+    if (isFavorited) {
+      // Remove from favorites
+      user.favorites = user.favorites.filter((id) => id.toString() !== chatId);
+    } else {
+      // Add to favorites
+      user.favorites.push(chatId as any);
+    }
+
+    const updatedUser = await user.save();
+    res.json({ favorites: updatedUser.favorites });
+  } else {
+    res.status(404);
+    throw new Error("User not found");
+  }
+});

@@ -3,7 +3,8 @@ import {
   registerUser, 
   authUser, 
   allUsers, 
-  updateUserProfile 
+  updateUserProfile, 
+  toggleFavoriteChat
 } from "../controllers/userControllers";
 import { protect } from "../middleware/authMiddleware";
 
@@ -15,5 +16,7 @@ router.route("/").post(registerUser).get(protect, allUsers);
 router.post("/login", authUser);
 // Profile Update (Protected)
 router.route("/profile").put(protect, updateUserProfile);
+// Toggle Favorite Chat (Protected)
+router.route("/favorites").put(protect, toggleFavoriteChat);
 
 export default router;
